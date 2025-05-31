@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baby Cry Classifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #6a92ec;
+            --primary-blue-dark: #4b73d8;
+            --success-green: #4CAF50;
+            --success-green-dark: #45a049;
+            --danger-red: #E15554;
+            --danger-red-dark: #cc4d4d;
+            --warning-yellow: #FFC107;
+            --warning-yellow-dark: #e0a800;
+            --secondary-gray: #8899AA;
+            --secondary-gray-dark: #778899;
+            --background-light: #f7f9fc;
+            --card-background: #ffffff;
+            --text-dark: #333d47;
+            --text-light: #667788;
+            --border-color: #e0e6ed;
+            --shadow-light: rgba(0, 0, 0, 0.08);
+            --shadow-strong: rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            line-height: 1.6;
+        }
+
+        .container {
+            background-color: var(--card-background);
+            padding: 40px;
+            border-radius: 18px;
+            box-shadow: 0 8px 30px var(--shadow-light);
+            text-align: center;
+            width: 100%;
+            max-width: 550px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            color: var(--primary-blue-dark);
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+
+        .controls, .file-upload-section {
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 14px 25px;
+            border: none;
+            border-radius: 30px; /* Pill shape */
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px var(--shadow-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px var(--shadow-strong);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px var(--shadow-light);
+        }
+        button:disabled {
+            background-color: var(--border-color);
+            color: var(--text-light);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #recordButton { background-color: var(--success-green); color: white; }
+        #recordButton:hover { background-color: var(--success-green-dark); }
+        #stopButton { background-color: var(--danger-red); color: white; }
+        #stopButton:hover { background-color: var(--danger-red-dark); }
+        #playButton { background-color: var(--warning-yellow); color: var(--text-dark); }
+        #playButton:hover { background-color: var(--warning-yellow-dark); }
+        #classifyButton { background-color: var(--primary-blue); color: white; }
+        #classifyButton:hover { background-color: var(--primary-blue-dark); }
+        #uploadButton { background-color: var(--secondary-gray); color: white; }
+        #uploadButton:hover { background-color: var(--secondary-gray-dark); }
+
+        input[type="file"] {
+            display: none; /* Hide default file input */
+        }
+
+        .custom-file-upload {
+            padding: 14px 25px;
+            background-color: var(--secondary-gray);
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px var(--shadow-light);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .custom-file-upload:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px var(--shadow-strong);
+            background-color: var(--secondary-gray-dark);
+        }
+
+        audio {
+            width: calc(100% - 20px); /* Adjust for padding if any */
+            margin-top: 30px;
+            border-radius: 12px;
+            background-color: var(--background-light);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            padding: 10px;
+        }
+
+        #statusMessage {
+            margin-top: 25px;
+            font-size: 1.15em;
+            font-weight: 600;
+            min-height: 25px;
+            color: var(--text-light);
+        }
+
+        #predictionResult {
+            margin-top: 30px;
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary-blue); /* Start with primary blue */
+            min-height: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        #predictionResult.success {
+            color: var(--success-green);
+        }
+        #predictionResult.error {
+            color: var(--danger-red);
+        }
+
+        .loading {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Baby Cry Classifier</h1>
+
+        <div class="section-title">Record New Cry</div>
+        <div class="controls">
+            <button id="recordButton">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="6" height="6"></rect><path d="M12 1V3"></path><path d="M18 10V6"></path><path d="M23 12H21"></path><path d="M20.49 19.51L17.66 16.68"></path><path d="M12 23V21"></path><path d="M6 18V14"></path><path d="M1 12H3"></path><path d="M3.51 4.49L6.34 7.32"></path></svg>
+                Start Recording
+            </button>
+            <button id="stopButton" disabled>
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M9 9l6 6m0-6l-6 6"></path></svg>
+                Stop Recording
+            </button>
+            <button id="playButton" disabled>
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Play Recording
+            </button>
+            <button id="classifyButton" disabled>
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 10.29c-1.34 1.34-1.34 3.53 0 4.88l8.47 6.43c1.34 1.34 3.53 1.34 4.88 0l8.47-6.43c1.34-1.34 1.34-3.53 0-4.88L15.17 3.86c-1.34-1.34-3.53-1.34-4.88 0z"></path></svg>
+                Classify Cry
+            </button>
+        </div>
+
+        <div class="section-title">Or Upload Audio File</div>
+        <div class="file-upload-section">
+            <input type="file" id="audioFileInput" accept="audio/*">
+            <label for="audioFileInput" class="custom-file-upload">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 15.6L16.4 20.4c-1.34 1.34-3.53 1.34-4.88 0l-4.8-4.8c-1.34-1.34-1.34-3.53 0-4.88l4.8-4.8c1.34-1.34 3.53-1.34 4.88 0l4.8 4.8c1.34 1.34 1.34 3.53 0 4.88z"></path><line x1="8" y1="12" x2="16" y2="12"></line><line x1="12" y1="8" x2="12" y2="16"></line></svg>
+                Choose File
+            </label>
+            <button id="uploadButton">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Upload & Classify
+            </button>
+        </div>
+
+        <audio id="audioPlayback" controls></audio>
+
+        <div id="statusMessage"></div>
+        <div class="loading" id="loadingSpinner"></div>
+        <div id="predictionResult"></div>
+    </div>
+
+    <script>
+        const recordButton = document.getElementById('recordButton');
+        const stopButton = document.getElementById('stopButton');
+        const playButton = document.getElementById('playButton');
+        const classifyButton = document.getElementById('classifyButton');
+        const audioFileInput = document.getElementById('audioFileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const audioPlayback = document.getElementById('audioPlayback');
+        const statusMessage = document.getElementById('statusMessage');
+        const predictionResult = document.getElementById('predictionResult');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordedBlob = null; // Stores the latest recorded or uploaded audio blob
+
+        // --- Helper Functions ---
+        function setStatus(message, type = 'info') {
+            statusMessage.innerText = message;
+            statusMessage.style.color = type === 'error' ? 'var(--danger-red)' : (type === 'success' ? 'var(--success-green)' : 'var(--text-light)');
+        }
+
+        function showLoading(show) {
+            loadingSpinner.style.display = show ? 'block' : 'none';
+            if (show) { // Only clear prediction when starting a new classification
+                predictionResult.innerText = '';
+                predictionResult.className = ''; // Clear classes
+            }
+        }
+
+        function setPredictionResult(text, type = 'info') {
+            predictionResult.innerText = text;
+            predictionResult.className = type; // Add class for styling (e.g., 'success', 'error')
+        }
+
+
+        function enableButtons(record, stop, play, classify, upload) {
+            recordButton.disabled = !record;
+            stopButton.disabled = !stop;
+            playButton.disabled = !play;
+            classifyButton.disabled = !classify;
+            uploadButton.disabled = !upload;
+            audioFileInput.disabled = !upload;
+        }
+
+        // --- Audio Recording Functions ---
+        recordButton.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const options = { mimeType: 'audio/webm' }; // Default to webm for broader browser support
+                if (MediaRecorder.isTypeSupported('audio/wav')) {
+                    options.mimeType = 'audio/wav';
+                } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                    options.mimeType = 'audio/ogg';
+                }
+                
+                mediaRecorder = new MediaRecorder(stream, options);
+                audioChunks = [];
+                recordedBlob = null; // Reset previous recording
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    recordedBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                    
+                    console.log('Recorded Blob:', recordedBlob);
+                    console.log('Recorded Blob type:', recordedBlob.type);
+                    console.log('Recorded Blob size:', recordedBlob.size, 'bytes');
+
+                    if (recordedBlob.size === 0) {
+                        setStatus("Recording stopped, but no audio data was captured. Try recording for longer.", "error");
+                        enableButtons(true, false, false, false, true);
+                        audioPlayback.src = ''; // Clear src
+                        audioPlayback.hidden = true; // Hide playback if no data
+                        return; // Exit if blob is empty
+                    }
+
+                    const audioURL = URL.createObjectURL(recordedBlob);
+                    audioPlayback.src = audioURL;
+                    setStatus("Recording stopped. Ready to play or classify.");
+                    enableButtons(true, false, true, true, true);
+                };
+
+                mediaRecorder.start();
+                setStatus("Recording...", "info");
+                enableButtons(false, true, false, false, false);
+                audioPlayback.src = ''; // Clear previous playback
+                setPredictionResult(''); // Clear previous prediction text
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                setStatus(`Error: Could not access microphone. ${err.message}`, "error");
+                enableButtons(true, false, false, false, true);
+            }
+        });
+
+        stopButton.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Stop microphone stream
+            }
+        });
+
+        playButton.addEventListener('click', () => {
+            if (recordedBlob) {
+                audioPlayback.play();
+                setStatus("Playing recording...", "info");
+            }
+        });
+
+        // --- Event Listener for Classify Button (Recorded Audio) ---
+        classifyButton.addEventListener('click', async () => {
+            console.log('Classify button (recorded audio) clicked. recordedBlob state:', recordedBlob);
+            if (!recordedBlob) {
+                setStatus("No recorded audio to classify. Please record first.", "error");
+                return;
+            }
+            await sendAudioForClassification(recordedBlob);
+        });
+
+        // --- File Upload Functions ---
+        audioFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                recordedBlob = file; // Store the uploaded file as the current blob
+                const audioURL = URL.createObjectURL(file);
+                audioPlayback.src = audioURL;
+                setStatus(`File '${file.name}' loaded. Ready to classify.`, "info");
+                enableButtons(true, false, true, true, true); // Enable play and classify
+                setPredictionResult(''); // Clear previous prediction text
+            } else {
+                recordedBlob = null;
+                audioPlayback.src = '';
+                setStatus("No file selected.", "info");
+                enableButtons(true, false, false, false, true);
+            }
+        });
+
+        uploadButton.addEventListener('click', async () => {
+            console.log('Upload & Classify button clicked. recordedBlob state:', recordedBlob);
+            if (!recordedBlob) {
+                setStatus("Please select an audio file first.", "error");
+                return;
+            }
+            await sendAudioForClassification(recordedBlob);
+        });
+
+
+        // --- Classification Function ---
+        async function sendAudioForClassification(audioBlob) {
+            if (!audioBlob) {
+                setStatus("No audio to classify. Please record or upload first.", "error");
+                return;
+            }
+
+            setStatus("Classifying cry...", "info");
+            showLoading(true); // Show spinner and clear predictionResult
+            enableButtons(false, false, false, false, false); // Disable all buttons during classification
+
+            const formData = new FormData();
+            const filename = `audio.${audioBlob.type.split('/')[1] || 'wav'}`;
+            formData.append('audio_file', audioBlob, filename);
+
+            try {
+                console.log('Attempting to send audio to backend...');
+                const response = await fetch('http://127.0.0.1:5000/classify_cry', {
+                    method: 'POST',
+                    body: formData,
+                });
+                console.log('Fetch request completed. Raw Response Object:', response);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Non-OK response status:', response.status);
+                    console.error('Non-OK response text:', errorText);
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        throw new Error(`Server error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+                    } catch (jsonError) {
+                        throw new Error(`Server error: ${response.status} - ${errorText || response.statusText}`);
+                    }
+                }
+
+                const data = await response.json();
+                console.log('Backend response data (parsed JSON):', data);
+
+                if (data && data.prediction) {
+                    setPredictionResult(`Prediction: ${data.prediction}`, 'success');
+                    setStatus("Classification complete!", "success");
+                } else {
+                    setPredictionResult('Classification failed: Unexpected backend response.', 'error');
+                    setStatus("Classification failed: Unexpected response format from backend.", "error");
+                    console.error("Unexpected backend response (missing 'prediction' key):", data);
+                }
+
+            } catch (error) {
+                console.error('Error during classification (caught in frontend):', error);
+                setPredictionResult(`Classification failed: ${error.message}`, 'error');
+                setStatus(`Classification failed: ${error.message}`, "error");
+            } finally {
+                showLoading(false); // Hide spinner, but don't clear predictionResult
+                enableButtons(true, false, recordedBlob ? true : false, recordedBlob ? true : false, true);
+            }
+        }
+
+        // --- Initial State ---
+        enableButtons(true, false, false, false, true);
+        audioPlayback.hidden = true;
+        setStatus("Ready to record or upload an audio file.", "info");
+
+        audioPlayback.onloadedmetadata = () => {
+            audioPlayback.hidden = false;
+        };
+        audioPlayback.onerror = () => {
+            audioPlayback.hidden = true;
+            setStatus("Error loading audio for playback.", "error");
+        };
+
+    </script>
+</body>
+</html>
